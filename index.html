@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIT Mobile Recovery Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── Variables ── */
+:root {
+  --navy:   #0D1B2A;
+  --navy2:  #112233;
+  --navy3:  #0f2c3d;
+  --border: #1E3A4A;
+  --teal:   #2DD4BF;
+  --teal2:  #14b8a6;
+  --text:   #E2E8F0;
+  --muted:  #94A3B8;
+  --dim:    #64748B;
+  --white:  #F8FAFC;
+  --green:  #4ADE80;
+  --yellow: #FACC15;
+  --blue:   #60A5FA;
+  --red:    #EF4444;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; }
+ul { list-style: none; }
+
+/* ── Navbar ── */
+.navbar {
+  position: sticky; top: 0; z-index: 1000;
+  background: rgba(13,27,42,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.nav-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 1.3rem;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--white);
+}
+.nav-logo span { color: var(--teal); }
+.nav-links {
+  display: flex; align-items: center; gap: 0.2rem;
+}
+.nav-links a {
+  font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted);
+  padding: 0.5rem 0.7rem; border-radius: 6px;
+  transition: all .2s; white-space: nowrap;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--navy); background: var(--teal);
+}
+.nav-actions { display: flex; align-items: center; gap: 0.6rem; }
+.lang-btn {
+  background: transparent; border: 1.5px solid var(--teal);
+  color: var(--teal); font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem; font-weight: 700; padding: 4px 10px;
+  border-radius: 6px; cursor: pointer; transition: all .2s;
+}
+.lang-btn:hover { background: var(--teal); color: var(--navy); }
+
+/* Hamburger */
+.hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+}
+.hamburger span {
+  display: block; width: 24px; height: 2px;
+  background: var(--teal); border-radius: 2px; transition: all .3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+/* Mobile menu */
+.mobile-menu {
+  display: none; flex-direction: column;
+  background: var(--navy2); border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem; gap: 0.3rem;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a {
+  font-size: 0.9rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--muted);
+  padding: 0.7rem 1rem; border-radius: 8px; transition: all .2s;
+}
+.mobile-menu a:hover, .mobile-menu a.active {
+  color: var(--navy); background: var(--teal);
+}
+
+/* ── Pages ── */
+.page { display: none; }
+.page.active { display: block; }
+.container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+/* ── Typography ── */
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3rem);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--white); line-height: 1.05; margin-bottom: 0.5rem;
+}
+.section-title span { color: var(--teal); }
+.section-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; line-height: 1.6; }
+.badge {
+  display: inline-block; background: rgba(45,212,191,0.12);
+  color: var(--teal); font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700; font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.12em; padding: 3px 12px; border-radius: 4px; margin-bottom: 0.8rem;
+}
+
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #0F2941 50%, #0a2332 100%);
+  border: 1px solid var(--border); border-radius: 16px;
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 3.5rem);
+  margin-bottom: 2rem; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -80px; right: -80px;
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(45,212,191,0.1) 0%, transparent 70%);
+  border-radius: 50%; pointer-events: none;
+}
+.hero-slogan {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+  font-size: clamp(0.75rem, 2vw, 1rem); text-transform: uppercase;
+  letter-spacing: 0.25em; color: var(--teal); margin-bottom: 1rem;
+}
+.hero-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: clamp(3rem, 9vw, 5.5rem); line-height: 0.95;
+  text-transform: uppercase; color: var(--white); margin-bottom: 1.5rem;
+}
+.hero-title span { color: var(--teal); }
+.hero-desc {
+  font-size: clamp(0.9rem, 2.5vw, 1.05rem); color: var(--muted);
+  max-width: 560px; line-height: 1.75; margin-bottom: 2rem;
+}
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--teal); color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 14px 32px; border-radius: 8px; border: none; cursor: pointer;
+  transition: all .2s; display: inline-block;
+}
+.btn-primary:hover { background: var(--teal2); transform: translateY(-2px); }
+.btn-outline {
+  background: transparent; border: 2px solid var(--teal); color: var(--teal);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 28px; border-radius: 8px; cursor: pointer;
+  transition: all .2s; display: inline-block;
+}
+.btn-outline:hover { background: var(--teal); color: var(--navy); }
+
+/* ── Stats grid ── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+.stat-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.2rem; text-align: center;
+}
+.stat-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 1.8rem; color: var(--teal);
+}
+.stat-label {
+  color: var(--dim); font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.1em; font-weight: 600; margin-top: 4px;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.8rem;
+  transition: border-color .2s, transform .2s;
+}
+.card:hover { border-color: var(--teal); transform: translateY(-3px); }
+.card-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--white); margin-bottom: 0.5rem;
+}
+.card-body { color: var(--muted); font-size: 0.9rem; line-height: 1.65; }
+.card-perks { margin-top: 1rem; }
+.card-perks li { color: var(--muted); font-size: 0.88rem; padding: 3px 0; }
+.card-perks li::before { content: '✓  '; color: var(--teal); font-weight: 700; }
+
+/* ── Grid layouts ── */
+.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+.grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 1rem; }
+
+/* ── Pricing ── */
+.price-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2rem 1.5rem; text-align: center;
+  position: relative; overflow: hidden; transition: all .25s;
+}
+.price-card:hover { border-color: var(--teal); transform: translateY(-4px); }
+.price-card.featured { border-color: var(--teal); background: linear-gradient(160deg,var(--navy3),var(--navy2)); }
+.price-card.featured::before {
+  content: 'BEST VALUE'; position: absolute; top: 14px; right: -28px;
+  background: var(--teal); color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 0.65rem; letter-spacing: 0.1em; padding: 4px 40px;
+  transform: rotate(35deg);
+}
+.price-label {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1rem;
+  font-weight: 700; text-transform: uppercase; color: var(--teal);
+  letter-spacing: 0.12em; margin-bottom: 0.5rem;
+}
+.price-amount {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 2.8rem; color: var(--white); line-height: 1;
+}
+.price-sub { color: var(--dim); font-size: 0.82rem; margin-top: 4px; margin-bottom: 1rem; }
+.price-perks { text-align: left; margin: 1rem 0 1.5rem; }
+.price-perks li { color: var(--muted); font-size: 0.85rem; padding: 4px 0; }
+.price-perks li::before { content: '✓  '; color: var(--teal); font-weight: 700; }
+
+/* ── Why items ── */
+.why-item {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 1rem 0; border-bottom: 1px solid var(--border);
+}
+.why-num {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 2rem; color: var(--teal); opacity: 0.4; min-width: 44px;
+}
+.why-text strong {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem;
+  font-weight: 800; text-transform: uppercase; color: var(--white); display: block;
+}
+.why-text span { color: var(--muted); font-size: 0.88rem; }
+
+/* ── Two-col layout ── */
+.two-col { display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; align-items: start; }
+.two-col-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+
+/* ── Info box ── */
+.info-box {
+  background: linear-gradient(160deg,var(--navy3),var(--navy2));
+  border: 1px solid var(--teal); border-radius: 16px; padding: 2rem;
+}
+.info-box-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: 1.4rem; text-transform: uppercase; color: var(--teal); margin-bottom: 1rem;
+}
+.info-row {
+  color: var(--muted); font-size: 0.9rem; line-height: 2.1;
+}
+
+/* ── Organogram ── */
+.org-founder {
+  background: linear-gradient(135deg,var(--navy3),var(--navy2));
+  border: 2px solid var(--teal); border-radius: 14px;
+  padding: 2rem; text-align: center; margin: 0 auto 1rem; max-width: 340px;
+}
+.org-name {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.3rem; text-transform: uppercase; color: var(--white);
+}
+.org-role { color: var(--teal); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+.org-arrow { text-align: center; color: var(--teal); font-size: 1.5rem; margin: 0.5rem 0; }
+.org-future {
+  background: var(--navy2); border: 1px dashed var(--border);
+  border-radius: 12px; padding: 1.4rem; text-align: center;
+}
+.org-future-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+  font-size: 1rem; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem;
+}
+.org-future-desc { color: var(--dim); font-size: 0.82rem; }
+.soon-badge {
+  display: inline-block; background: var(--border); color: var(--dim);
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; padding: 2px 8px; border-radius: 4px; margin-top: 0.6rem;
+}
+
+/* ── Table ── */
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  background: var(--navy2); border-radius: 14px; overflow: hidden;
+}
+.compare-table th {
+  padding: 12px 16px; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.82rem; font-weight: 700; background: var(--navy);
+}
+.compare-table th:nth-child(2) { color: var(--teal); background: var(--navy3); }
+.compare-table td { padding: 10px 16px; font-size: 0.88rem; border-bottom: 1px solid var(--border); }
+.compare-table td:nth-child(2) { background: rgba(15,44,61,0.4); }
+.compare-table td:first-child { color: var(--text); }
+.yes { color: var(--green); }
+.warn { color: var(--yellow); }
+.no  { color: var(--red); }
+
+/* ── Forms ── */
+.form-group { margin-bottom: 1.2rem; }
+.form-label { display: block; color: var(--muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--navy2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem; padding: 0.75rem 1rem; transition: border-color .2s;
+  outline: none; appearance: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
+}
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-select option { background: var(--navy2); }
+.submit-btn {
+  width: 100%; background: var(--teal); color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 14px; border-radius: 8px; border: none; cursor: pointer;
+  transition: all .2s; margin-top: 0.5rem;
+}
+.submit-btn:hover { background: var(--teal2); }
+
+/* ── Contact items ── */
+.contact-item {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.9rem 1rem; background: var(--navy2);
+  border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.7rem;
+}
+.contact-icon { font-size: 1.4rem; min-width: 32px; }
+.contact-label { color: var(--dim); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; }
+.contact-value { color: var(--text); font-size: 0.92rem; }
+
+/* ── Social cards ── */
+.social-ig {
+  background: linear-gradient(135deg,#1a0533,#2d1050,#0f1a3d);
+  border: 1px solid #833ab4; border-radius: 16px; padding: 2.5rem; text-align: center;
+}
+.social-fb {
+  background: linear-gradient(135deg,#0d1f3c,#1a3a6e);
+  border: 1px solid #1877f2; border-radius: 16px; padding: 2.5rem; text-align: center;
+}
+.social-wa {
+  background: linear-gradient(135deg,#0d2b1a,#1a4a2e);
+  border: 1px solid #25D366; border-radius: 16px; padding: 2rem; text-align: center;
+}
+.social-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+.social-handle { color: var(--text); font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; }
+.btn-ig { background: linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366); color: #fff; }
+.btn-fb { background: #1877f2; color: #fff; }
+.btn-wa { background: #25D366; color: #fff; }
+.social-btn {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer;
+  display: inline-block; transition: opacity .2s;
+}
+.social-btn:hover { opacity: 0.88; }
+
+/* ── Admin ── */
+.admin-login-wrap {
+  max-width: 400px; margin: 3rem auto;
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2.5rem; text-align: center;
+}
+.metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+.metric-card { background: var(--navy2); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center; }
+.metric-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 2.2rem; }
+.metric-label { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.1em; }
+.booking-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 0.8rem;
+}
+.booking-header { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+.booking-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--white); }
+.status-pill { font-size: 0.75rem; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+.status-Pending   { background: #2a2a12; color: var(--yellow); border: 1px solid rgba(250,204,21,0.3); }
+.status-Confirmed { background: #12203a; color: var(--blue);   border: 1px solid rgba(96,165,250,0.3); }
+.status-Done      { background: #122a12; color: var(--green);  border: 1px solid rgba(74,222,128,0.3); }
+.booking-id { color: var(--dim); font-size: 0.8rem; margin-left: auto; }
+.booking-details { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 0.4rem 1.2rem; font-size: 0.875rem; margin-bottom: 0.8rem; }
+.booking-details span { color: var(--muted); }
+.booking-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.action-btn {
+  font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 700;
+  padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; transition: opacity .2s;
+}
+.action-btn:hover { opacity: 0.8; }
+.btn-confirm { background: rgba(96,165,250,0.15); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); }
+.btn-done    { background: rgba(74,222,128,0.15); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+.btn-delete  { background: rgba(239,68,68,0.15);  color: var(--red);   border: 1px solid rgba(239,68,68,0.3); }
+.filter-row  { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.filter-btn  {
+  font-size: 0.8rem; font-weight: 700; padding: 6px 16px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all .2s;
+}
+.filter-btn.active, .filter-btn:hover { background: var(--teal); color: var(--navy); border-color: var(--teal); }
+
+/* ── Alerts ── */
+.alert { padding: 0.9rem 1.2rem; border-radius: 8px; font-size: 0.9rem; margin-top: 1rem; display: none; }
+.alert.show { display: block; }
+.alert-success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: var(--green); }
+.alert-error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: var(--red); }
+
+/* ── Commitment cards ── */
+.commitment-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.4rem; margin-bottom: 0.8rem;
+}
+.commitment-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+.commitment-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+  font-size: 1.05rem; text-transform: uppercase; color: var(--white); margin-bottom: 0.4rem;
+}
+.commitment-desc { color: var(--muted); font-size: 0.87rem; line-height: 1.6; margin-bottom: 0.4rem; }
+.commitment-tag { color: var(--teal); font-size: 0.78rem; font-weight: 700; font-style: italic; }
+
+/* ── Step cards ── */
+.step-card {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.2rem 0.8rem; text-align: center;
+}
+.step-num { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 2rem; color: var(--teal); opacity: 0.4; }
+.step-icon { font-size: 1.8rem; margin: 0.3rem 0; }
+.step-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; color: var(--white); margin-bottom: 0.3rem; }
+.step-desc { color: var(--dim); font-size: 0.78rem; line-height: 1.5; }
+
+/* ── Hours box ── */
+.hours-box {
+  background: var(--navy2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.5rem; text-align: center; margin-top: 1rem;
+}
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+/* ── CTA strip ── */
+.cta-strip {
+  background: linear-gradient(135deg,var(--navy3),var(--navy2));
+  border: 1px solid var(--teal); border-radius: 14px;
+  padding: 2rem; text-align: center; margin-top: 2rem;
+}
+.cta-strip-title {
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: clamp(1.4rem, 3vw, 1.8rem); text-transform: uppercase;
+  color: var(--white); margin-bottom: 0.5rem;
+}
+
+/* ── WA float button ── */
+.wa-float {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 999;
+  background: #25D366; color: #fff; border: none; border-radius: 50%;
+  width: 56px; height: 56px; font-size: 1.6rem; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(37,211,102,0.4); transition: transform .2s;
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none;
+}
+.wa-float:hover { transform: scale(1.1); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .grid-4 { grid-template-columns: repeat(2,1fr); }
+  .grid-5 { grid-template-columns: repeat(2,1fr); }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .two-col-eq { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(2,1fr); }
+  .compare-table { font-size: 0.78rem; }
+  .compare-table th, .compare-table td { padding: 8px 10px; }
+}
+@media (max-width: 600px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr; }
+  .grid-5 { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .hero-btns { flex-direction: column; }
+  .btn-primary, .btn-outline { text-align: center; }
+  .metrics-grid { grid-template-columns: repeat(2,1fr); }
+  .booking-details { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo">FIT <span>MOBILE</span></div>
+    <div class="nav-links">
+      <a href="#" class="active" onclick="showPage('home',this)">Home</a>
+      <a href="#" onclick="showPage('about',this)">About</a>
+      <a href="#" onclick="showPage('services',this)">Services</a>
+      <a href="#" onclick="showPage('why',this)">Why Us</a>
+      <a href="#" onclick="showPage('care',this)">Care</a>
+      <a href="#" onclick="showPage('social',this)">Social</a>
+      <a href="#" onclick="showPage('booking',this)">Book Now</a>
+      <a href="#" onclick="showPage('contact',this)">Contact</a>
+      <a href="#" onclick="showPage('admin',this)">Admin</a>
+    </div>
+    <div class="nav-actions">
+      <button class="lang-btn" onclick="toggleLang()" id="langBtn">🇫🇷 FR</button>
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#" onclick="showPage('home',this);toggleMenu()">🏠 Home</a>
+    <a href="#" onclick="showPage('about',this);toggleMenu()">ℹ️ About</a>
+    <a href="#" onclick="showPage('services',this);toggleMenu()">📋 Services</a>
+    <a href="#" onclick="showPage('why',this);toggleMenu()">⭐ Why Us</a>
+    <a href="#" onclick="showPage('care',this);toggleMenu()">❤️ Customer Care</a>
+    <a href="#" onclick="showPage('social',this);toggleMenu()">📱 Social Media</a>
+    <a href="#" onclick="showPage('booking',this);toggleMenu()">📅 Book Now</a>
+    <a href="#" onclick="showPage('contact',this);toggleMenu()">📞 Contact</a>
+    <a href="#" onclick="showPage('admin',this);toggleMenu()">🔐 Admin</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     PAGE: HOME
+══════════════════════════════════════════ -->
+<div id="page-home" class="page active">
+<div class="container">
+  <div class="hero">
+    <div class="badge" data-en="🇲🇺 Mauritius Mobile Recovery Specialist" data-fr="🇲🇺 Spécialiste Mobile de Récupération">🇲🇺 Mauritius Mobile Recovery Specialist</div>
+    <div class="hero-slogan" data-en="Recover Better. Move Freely. Perform Stronger." data-fr="Récupérez Mieux. Bougez Librement. Performez Plus Fort.">Recover Better. Move Freely. Perform Stronger.</div>
+    <div class="hero-title">RECOVER<br><span>BETTER.</span></div>
+    <p class="hero-desc" data-en="We provide professional mobile recovery and assisted stretching services, designed for busy individuals who want to reduce pain, improve mobility, and enhance performance — all from the comfort of their home." data-fr="Nous fournissons des services professionnels de récupération mobile et d'étirements assistés, conçus pour les personnes occupées qui souhaitent réduire la douleur et améliorer la mobilité.">We provide professional mobile recovery and assisted stretching services, designed for busy individuals who want to reduce pain, improve mobility, and enhance performance — all from the comfort of their home.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="showPage('booking')" data-en="Book a Session" data-fr="Réserver une Séance">Book a Session</button>
+      <button class="btn-outline" onclick="showPage('services')" data-en="Our Services" data-fr="Nos Services">Our Services</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label" data-en="Mobile Service" data-fr="Service Mobile">Mobile Service</div></div>
+    <div class="stat-card"><div class="stat-num">4</div><div class="stat-label" data-en="Service Types" data-fr="Types de Services">Service Types</div></div>
+    <div class="stat-card"><div class="stat-num">Rs 800</div><div class="stat-label" data-en="From / Session" data-fr="À partir de / Séance">From / Session</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:1.1rem;padding-top:0.3rem">Plaines Wilhems</div><div class="stat-label" data-en="& Surroundings" data-fr="& Environs">& Surroundings</div></div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:2.5rem">
+    <div>
+      <div class="section-title" data-en="WHY CHOOSE <span>US</span>" data-fr="POURQUOI NOUS <span>CHOISIR</span>">WHY CHOOSE <span>US</span></div>
+      <div style="margin-top:1.5rem">
+        <div class="why-item"><div class="why-num">01</div><div class="why-text"><strong data-en="🏠 100% Mobile" data-fr="🏠 100% Mobile">🏠 100% Mobile</strong><span data-en="We come to you — no travel, no hassle." data-fr="Nous venons chez vous — pas de tracas.">We come to you — no travel, no hassle.</span></div></div>
+        <div class="why-item"><div class="why-num">02</div><div class="why-text"><strong data-en="🎯 Personalized" data-fr="🎯 Personnalisé">🎯 Personalized</strong><span data-en="Sessions tailored to your body and goals." data-fr="Séances adaptées à votre corps et vos objectifs.">Sessions tailored to your body and goals.</span></div></div>
+        <div class="why-item"><div class="why-num">03</div><div class="why-text"><strong data-en="💪 Professional" data-fr="💪 Professionnel">💪 Professional</strong><span data-en="Safe, evidence-based recovery techniques." data-fr="Techniques de récupération sûres et professionnelles.">Safe, evidence-based recovery techniques.</span></div></div>
+        <div class="why-item"><div class="why-num">04</div><div class="why-text"><strong data-en="📈 Long-term Results" data-fr="📈 Résultats Durables">📈 Long-term Results</strong><span data-en="Lasting improvement, not quick fixes." data-fr="Amélioration durable, pas de solutions rapides.">Lasting improvement, not quick fixes.</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="info-box" style="margin-top:1rem">
+        <div style="font-size:3.5rem;text-align:center;margin-bottom:1rem">🧘</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.4rem;text-transform:uppercase;color:var(--white);text-align:center;margin-bottom:0.8rem" data-en="Ready to Feel Better?" data-fr="Prêt à Vous Sentir Mieux?">Ready to Feel Better?</div>
+        <p style="color:var(--muted);font-size:0.88rem;text-align:center;margin-bottom:1.2rem" data-en="Book your first session today." data-fr="Réservez votre première séance aujourd'hui.">Book your first session today.</p>
+        <a href="https://wa.me/23055135606" target="_blank" style="display:block;background:#25D366;color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;padding:12px;border-radius:8px;text-align:center">💬 +230 5513 5606</a>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="OUR <span>SERVICES</span>" data-fr="NOS <span>SERVICES</span>">OUR <span>SERVICES</span></div>
+  <p class="section-sub" style="margin-top:0.5rem"></p>
+  <div class="grid-4" style="margin-bottom:2.5rem">
+    <div class="card" style="text-align:center"><div class="card-icon">🤸</div><div class="card-title" data-en="Assisted Stretching" data-fr="Étirements Assistés">Assisted Stretching</div><div class="card-body" data-en="Flexibility & reduced stiffness" data-fr="Flexibilité & réduction des raideurs">Flexibility & reduced stiffness</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">💆</div><div class="card-title" data-en="Recovery Sessions" data-fr="Séances de Récupération">Recovery Sessions</div><div class="card-body" data-en="Muscle relaxation & recovery" data-fr="Relaxation musculaire & récupération">Muscle relaxation & recovery</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏃</div><div class="card-title" data-en="Mobility Training" data-fr="Mobilité">Mobility Training</div><div class="card-body" data-en="Movement patterns & posture" data-fr="Schémas de mouvement & posture">Movement patterns & posture</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏠</div><div class="card-title" data-en="Home Service" data-fr="Service à Domicile">Home Service</div><div class="card-body" data-en="We come to your location" data-fr="Nous venons chez vous">We come to your location</div></div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="WHO WE <span>HELP</span>" data-fr="QUI NOUS <span>AIDONS</span>">WHO WE <span>HELP</span></div>
+  <div class="grid-4" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center"><div class="card-icon">💼</div><div class="card-title" data-en="Busy Professionals" data-fr="Professionnels">Busy Professionals</div><div class="card-body" data-en="Desk workers with tension" data-fr="Travailleurs de bureau avec tension">Desk workers with tension</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏋️</div><div class="card-title" data-en="Athletes" data-fr="Athlètes">Athletes</div><div class="card-body" data-en="Faster recovery between sessions" data-fr="Récupération plus rapide">Faster recovery between sessions</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">😣</div><div class="card-title" data-en="Pain & Stiffness" data-fr="Douleur & Raideur">Pain & Stiffness</div><div class="card-body" data-en="Chronic muscle tightness" data-fr="Tensions musculaires chroniques">Chronic muscle tightness</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏠</div><div class="card-title" data-en="Home Clients" data-fr="Clients à Domicile">Home Clients</div><div class="card-body" data-en="Convenience at your doorstep" data-fr="Commodité à votre porte">Convenience at your doorstep</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: ABOUT
+══════════════════════════════════════════ -->
+<div id="page-about" class="page">
+<div class="container">
+  <div class="section-title" data-en="ABOUT <span>US</span>" data-fr="À <span>PROPOS</span>">ABOUT <span>US</span></div>
+  <div class="two-col" style="margin-top:1.5rem">
+    <div>
+      <div class="card" style="margin-bottom:1rem"><div class="card-icon">💡</div><div class="card-title" data-en="Business Concept" data-fr="Concept d'Entreprise">Business Concept</div><div class="card-body" data-en="Fit Mobile Recovery Lab is a mobile fitness recovery service that delivers assisted stretching and recovery sessions directly to clients. We focus on improving flexibility, reducing muscle tension, and enhancing overall movement quality." data-fr="Fit Mobile Recovery Lab est un service mobile de récupération fitness qui apporte des séances d'étirements assistés directement aux clients.">Fit Mobile Recovery Lab is a mobile fitness recovery service that delivers assisted stretching and recovery sessions directly to clients. We focus on improving flexibility, reducing muscle tension, and enhancing overall movement quality.</div></div>
+      <div class="card" style="margin-bottom:1rem"><div class="card-icon">🎯</div><div class="card-title" data-en="Our Mission" data-fr="Notre Mission">Our Mission</div><div class="card-body" data-en="To help individuals move pain-free, recover faster, and live healthier through professional, accessible recovery services." data-fr="Aider les individus à se déplacer sans douleur, récupérer plus vite et vivre plus sainement.">To help individuals move pain-free, recover faster, and live healthier through professional, accessible recovery services.</div></div>
+      <div class="card" style="margin-bottom:1rem"><div class="card-icon">🔭</div><div class="card-title" data-en="Our Vision" data-fr="Notre Vision">Our Vision</div><div class="card-body" data-en="To become the leading mobile recovery service in Mauritius, helping people integrate recovery into their daily lifestyle." data-fr="Devenir le principal service de récupération mobile à l'Île Maurice.">To become the leading mobile recovery service in Mauritius, helping people integrate recovery into their daily lifestyle.</div></div>
+      <div class="card"><div class="card-icon">❗</div><div class="card-title" data-en="The Problem We Solve" data-fr="Le Problème que Nous Résolvons">The Problem We Solve</div><div class="card-body" data-en="Many people experience stiffness, pain, and lack of mobility but don't have time to visit clinics or gyms. We bring recovery directly to them." data-fr="Beaucoup de personnes souffrent de raideurs mais n'ont pas le temps de se rendre dans des cliniques. Nous leur apportons la récupération directement.">Many people experience stiffness, pain, and lack of mobility but don't have time to visit clinics or gyms. We bring recovery directly to them.</div></div>
+    </div>
+    <div>
+      <div class="info-box" style="margin-bottom:1rem">
+        <div class="info-box-title">FIT MOBILE<br>RECOVERY LAB</div>
+        <div class="info-row">📍 Plaines Wilhems, Mauritius<br>📱 +230 5513 5606<br>📧 fitmobrecoverylab.777@gmail.com<br>📘 @FITMobileRecoveryLab<br>📸 @fitmobilerecoverylab</div>
+      </div>
+      <div class="stat-card" style="margin-bottom:0.6rem;display:flex;align-items:center;gap:1rem;text-align:left"><div class="stat-num">4</div><div class="stat-label" data-en="Services Offered" data-fr="Services Offerts">Services Offered</div></div>
+      <div class="stat-card" style="margin-bottom:0.6rem;display:flex;align-items:center;gap:1rem;text-align:left"><div class="stat-num">Rs 800</div><div class="stat-label" data-en="From / Session" data-fr="À partir de / Séance">From / Session</div></div>
+      <div class="stat-card" style="display:flex;align-items:center;gap:1rem;text-align:left"><div class="stat-num">100%</div><div class="stat-label" data-en="Mobile & Convenient" data-fr="Mobile & Pratique">Mobile & Convenient</div></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="OUR <span>TEAM</span>" data-fr="NOTRE <span>ÉQUIPE</span>">OUR <span>TEAM</span></div>
+  <div style="margin-top:1.5rem;text-align:center">
+    <div class="org-founder">
+      <div style="font-size:3rem;margin-bottom:0.5rem">👨‍💼</div>
+      <div class="org-name">Elvin Pillay Sawmy</div>
+      <div class="org-role" data-en="Founder & Lead Recovery Specialist" data-fr="Fondateur & Spécialiste Principal">Founder & Lead Recovery Specialist</div>
+    </div>
+    <div class="org-arrow">↓</div>
+    <div class="badge" data-en="Future Roles" data-fr="Rôles Futurs">Future Roles</div>
+    <div class="grid-3" style="margin-top:1rem">
+      <div class="org-future"><div style="font-size:2rem;margin-bottom:0.5rem">🤸</div><div class="org-future-title" data-en="Assistant Recovery Specialist" data-fr="Assistant Spécialiste">Assistant Recovery Specialist</div><div class="org-future-desc" data-en="Supports sessions & client delivery" data-fr="Support des séances">Supports sessions & client delivery</div><div class="soon-badge" data-en="Coming Soon" data-fr="Bientôt">Coming Soon</div></div>
+      <div class="org-future"><div style="font-size:2rem;margin-bottom:0.5rem">📱</div><div class="org-future-title" data-en="Social Media Manager" data-fr="Gestionnaire Réseaux Sociaux">Social Media Manager</div><div class="org-future-desc" data-en="Content creation & engagement" data-fr="Création de contenu">Content creation & engagement</div><div class="soon-badge" data-en="Coming Soon" data-fr="Bientôt">Coming Soon</div></div>
+      <div class="org-future"><div style="font-size:2rem;margin-bottom:0.5rem">📋</div><div class="org-future-title" data-en="Admin / Booking Manager" data-fr="Admin / Gestionnaire">Admin / Booking Manager</div><div class="org-future-desc" data-en="Scheduling & coordination" data-fr="Planification & coordination">Scheduling & coordination</div><div class="soon-badge" data-en="Coming Soon" data-fr="Bientôt">Coming Soon</div></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="TARGET <span>MARKET</span>" data-fr="MARCHÉ <span>CIBLE</span>">TARGET <span>MARKET</span></div>
+  <div class="two-col" style="margin-top:1.5rem">
+    <div>
+      <div class="contact-item"><div class="contact-icon">🎂</div><div><div class="contact-label">Ages</div><div class="contact-value" data-en="18–45 — Active adults in their prime years" data-fr="18–45 — Adultes actifs dans leurs meilleures années">18–45 — Active adults in their prime years</div></div></div>
+      <div class="contact-item"><div class="contact-icon">💼</div><div><div class="contact-label" data-en="Busy Professionals" data-fr="Professionnels">Busy Professionals</div><div class="contact-value" data-en="Office workers with desk-related tension & stiffness" data-fr="Travailleurs de bureau avec tensions">Office workers with desk-related tension & stiffness</div></div></div>
+      <div class="contact-item"><div class="contact-icon">🏋️</div><div><div class="contact-label" data-en="Gym-goers & Athletes" data-fr="Sportifs">Gym-goers & Athletes</div><div class="contact-value" data-en="Needing faster recovery between training sessions" data-fr="Récupération plus rapide entre les séances">Needing faster recovery between training sessions</div></div></div>
+      <div class="contact-item"><div class="contact-icon">😣</div><div><div class="contact-label" data-en="Pain & Stiffness" data-fr="Douleur & Raideur">Pain & Stiffness</div><div class="contact-value" data-en="Chronic muscle tightness or poor mobility" data-fr="Tensions musculaires chroniques ou faible mobilité">Chronic muscle tightness or poor mobility</div></div></div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:0.8rem">📍</div>
+      <div class="card-title" data-en="Service Area" data-fr="Zone de Service">Service Area</div>
+      <div style="color:var(--teal);font-weight:700;font-size:1rem;margin:0.5rem 0">Plaines Wilhems</div>
+      <div style="color:var(--muted);font-size:0.88rem;line-height:2">Beau Bassin-Rose Hill<br>Quatre Bornes<br>Vacoas-Phoenix<br>Curepipe<br><span data-en="& surrounding areas" data-fr="& environs">& surrounding areas</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: SERVICES
+══════════════════════════════════════════ -->
+<div id="page-services" class="page">
+<div class="container">
+  <div class="section-title" data-en="OUR <span>SERVICES</span>" data-fr="NOS <span>SERVICES</span>">OUR <span>SERVICES</span></div>
+  <p class="section-sub" data-en="Everything you need to recover, move freely & perform at your best." data-fr="Tout ce qu'il vous faut pour récupérer, bouger librement et performer.">Everything you need to recover, move freely & perform at your best.</p>
+  <div class="grid-2">
+    <div class="card"><div class="card-icon">🤸</div><div class="card-title" data-en="Assisted Stretching" data-fr="Étirements Assistés">Assisted Stretching</div><div class="card-body" data-en="Improve flexibility, reduce stiffness, and enhance your mobility with guided one-on-one sessions." data-fr="Améliorez votre souplesse, réduisez la raideur et augmentez votre mobilité.">Improve flexibility, reduce stiffness, and enhance your mobility with guided one-on-one sessions.</div><ul class="card-perks"><li data-en="Improved flexibility" data-fr="Flexibilité améliorée">Improved flexibility</li><li data-en="Reduced stiffness" data-fr="Raideur réduite">Reduced stiffness</li><li data-en="Enhanced mobility" data-fr="Mobilité améliorée">Enhanced mobility</li></ul></div>
+    <div class="card"><div class="card-icon">💆</div><div class="card-title" data-en="Recovery Sessions" data-fr="Séances de Récupération">Recovery Sessions</div><div class="card-body" data-en="Targeted muscle relaxation and faster post-workout recovery to prevent injury." data-fr="Relaxation musculaire ciblée et récupération post-entraînement plus rapide.">Targeted muscle relaxation and faster post-workout recovery to prevent injury.</div><ul class="card-perks"><li data-en="Muscle relaxation" data-fr="Relaxation musculaire">Muscle relaxation</li><li data-en="Faster recovery" data-fr="Récupération plus rapide">Faster recovery</li><li data-en="Injury prevention" data-fr="Prévention des blessures">Injury prevention</li></ul></div>
+    <div class="card"><div class="card-icon">🏃</div><div class="card-title" data-en="Mobility Training" data-fr="Entraînement en Mobilité">Mobility Training</div><div class="card-body" data-en="Improve movement patterns, increase joint range, and correct posture for daily life and sport." data-fr="Améliorez les schémas de mouvement et augmentez la mobilité articulaire.">Improve movement patterns, increase joint range, and correct posture for daily life and sport.</div><ul class="card-perks"><li data-en="Better movement patterns" data-fr="Meilleurs schémas de mouvement">Better movement patterns</li><li data-en="Increased joint range" data-fr="Amplitude articulaire accrue">Increased joint range</li><li data-en="Improved posture" data-fr="Posture améliorée">Improved posture</li></ul></div>
+    <div class="card"><div class="card-icon">🏠</div><div class="card-title" data-en="Mobile Home Service" data-fr="Service à Domicile">Mobile Home Service</div><div class="card-body" data-en="We bring our full recovery toolkit directly to you. Just clear a small space — we handle the rest." data-fr="Nous apportons notre équipement complet chez vous. Libérez simplement un petit espace.">We bring our full recovery toolkit directly to you. Just clear a small space — we handle the rest.</div><ul class="card-perks"><li data-en="We come to your location" data-fr="Nous venons chez vous">We come to your location</li><li data-en="No travel needed" data-fr="Pas de déplacement nécessaire">No travel needed</li><li data-en="Fully equipped specialist" data-fr="Spécialiste entièrement équipé">Fully equipped specialist</li></ul></div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="<span>PRICING</span>" data-fr="<span>TARIFS</span>"><span>PRICING</span></div>
+  <div class="grid-4" style="margin-top:1.5rem">
+    <div class="price-card"><div class="price-label" data-en="Single Session" data-fr="Séance Unique">Single Session</div><div class="price-amount">Rs 800</div><div class="price-sub">MUR</div><ul class="price-perks"><li data-en="1 session (60 min)" data-fr="1 séance (60 min)">1 session (60 min)</li><li data-en="Any service type" data-fr="Tout type de service">Any service type</li><li data-en="At your location" data-fr="À votre domicile">At your location</li><li data-en="Flexible scheduling" data-fr="Horaires flexibles">Flexible scheduling</li></ul><button class="btn-primary" style="width:100%" onclick="showPage('booking')" data-en="Book Now" data-fr="Réserver">Book Now</button></div>
+    <div class="price-card featured"><div class="price-label" data-en="5-Session Pack" data-fr="Pack 5 Séances">5-Session Pack</div><div class="price-amount">Rs 3,500</div><div class="price-sub" data-en="Save Rs 500" data-fr="Économisez Rs 500">Save Rs 500</div><ul class="price-perks"><li data-en="5 sessions" data-fr="5 séances">5 sessions</li><li data-en="Save Rs 500" data-fr="Économisez Rs 500">Save Rs 500</li><li data-en="Priority booking" data-fr="Réservation prioritaire">Priority booking</li><li data-en="Any service type" data-fr="Tout type de service">Any service type</li></ul><button class="btn-primary" style="width:100%" onclick="showPage('booking')" data-en="Book Now" data-fr="Réserver">Book Now</button></div>
+    <div class="price-card"><div class="price-label" data-en="10-Session Pack" data-fr="Pack 10 Séances">10-Session Pack</div><div class="price-amount">Rs 6,500</div><div class="price-sub" data-en="Save Rs 1,500" data-fr="Économisez Rs 1,500">Save Rs 1,500</div><ul class="price-perks"><li data-en="10 sessions" data-fr="10 séances">10 sessions</li><li data-en="Save Rs 1,500" data-fr="Économisez Rs 1,500">Save Rs 1,500</li><li data-en="Priority booking" data-fr="Réservation prioritaire">Priority booking</li><li data-en="Progress tracking" data-fr="Suivi des progrès">Progress tracking</li></ul><button class="btn-primary" style="width:100%" onclick="showPage('booking')" data-en="Book Now" data-fr="Réserver">Book Now</button></div>
+    <div class="price-card"><div class="price-label" data-en="Custom Plan" data-fr="Plan Personnalisé">Custom Plan</div><div class="price-amount" style="font-size:2rem" data-en="Contact" data-fr="Contact">Contact</div><div class="price-sub" data-en="Tailored for you" data-fr="Adapté à vous">Tailored for you</div><ul class="price-perks"><li data-en="Tailored frequency" data-fr="Fréquence adaptée">Tailored frequency</li><li data-en="Multiple services" data-fr="Services multiples">Multiple services</li><li data-en="Group & family" data-fr="Groupe & famille">Group & family</li><li data-en="Special needs" data-fr="Besoins spéciaux">Special needs</li></ul><button class="btn-outline" style="width:100%" onclick="showPage('contact')" data-en="Contact Us" data-fr="Nous Contacter">Contact Us</button></div>
+  </div>
+  <p style="color:var(--muted);font-size:0.88rem;margin-top:1rem;text-align:center" data-en="💡 Custom plans available for corporate clients, sports teams & families." data-fr="💡 Plans personnalisés disponibles pour entreprises, équipes sportives et familles.">💡 Custom plans available for corporate clients, sports teams & families.</p>
+
+  <hr class="divider">
+  <div class="section-title" data-en="HOW IT <span>WORKS</span>" data-fr="COMMENT ÇA <span>MARCHE</span>">HOW IT <span>WORKS</span></div>
+  <div class="grid-5" style="margin-top:1.5rem">
+    <div class="step-card"><div class="step-num">1</div><div class="step-icon">📲</div><div class="step-title" data-en="Contact Us" data-fr="Contactez-nous">Contact Us</div><div class="step-desc" data-en="WhatsApp / Instagram / form" data-fr="WhatsApp / Instagram / formulaire">WhatsApp / Instagram / form</div></div>
+    <div class="step-card"><div class="step-num">2</div><div class="step-icon">📋</div><div class="step-title" data-en="Choose Service" data-fr="Choisir Service">Choose Service</div><div class="step-desc" data-en="Pick service & package" data-fr="Choisissez service & forfait">Pick service & package</div></div>
+    <div class="step-card"><div class="step-num">3</div><div class="step-icon">📅</div><div class="step-title" data-en="Book Session" data-fr="Réserver">Book Session</div><div class="step-desc" data-en="Choose date & time" data-fr="Choisissez date & heure">Choose date & time</div></div>
+    <div class="step-card"><div class="step-num">4</div><div class="step-icon">🏠</div><div class="step-title" data-en="We Come to You" data-fr="Nous Venons">We Come to You</div><div class="step-desc" data-en="Specialist arrives equipped" data-fr="Spécialiste arrive équipé">Specialist arrives equipped</div></div>
+    <div class="step-card"><div class="step-num">5</div><div class="step-icon">💆</div><div class="step-title" data-en="Recover" data-fr="Récupérez">Recover</div><div class="step-desc" data-en="Enjoy your session" data-fr="Profitez de votre séance">Enjoy your session</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: WHY US
+══════════════════════════════════════════ -->
+<div id="page-why" class="page">
+<div class="container">
+  <div class="section-title" data-en="WHY CHOOSE <span>US</span>" data-fr="POURQUOI NOUS <span>CHOISIR</span>">WHY CHOOSE <span>US</span></div>
+  <p class="section-sub" data-en="Here's what makes Fit Mobile Recovery Lab different — and better." data-fr="Voici ce qui rend Fit Mobile Recovery Lab différent — et meilleur.">Here's what makes Fit Mobile Recovery Lab different — and better.</p>
+  <div class="grid-2">
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">🏠</div><div class="card-title" style="margin:0" data-en="100% Mobile Service" data-fr="100% Service Mobile">100% Mobile Service</div></div><div class="card-body" data-en="We come directly to you — no travel, no gym membership needed. We bring everything to your door." data-fr="Nous venons directement chez vous — pas de déplacement, pas d'abonnement nécessaire.">We come directly to you — no travel, no gym membership needed. We bring everything to your door.</div></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">🎯</div><div class="card-title" style="margin:0" data-en="Personalized Sessions" data-fr="Séances Personnalisées">Personalized Sessions</div></div><div class="card-body" data-en="Every session is tailored to your body, your goals, and your pain points. No one-size-fits-all." data-fr="Chaque séance est adaptée à votre corps, vos objectifs et vos points de douleur.">Every session is tailored to your body, your goals, and your pain points. No one-size-fits-all.</div></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">💪</div><div class="card-title" style="margin:0" data-en="Professional & Safe" data-fr="Professionnel & Sûr">Professional & Safe</div></div><div class="card-body" data-en="Evidence-based, professionally guided techniques. Your safety and comfort are our #1 priority." data-fr="Techniques basées sur des preuves. Votre sécurité et votre confort sont notre priorité numéro 1.">Evidence-based, professionally guided techniques. Your safety and comfort are our #1 priority.</div></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">⏰</div><div class="card-title" style="margin:0" data-en="Saves Time & Travel" data-fr="Économise Temps & Trajets">Saves Time & Travel</div></div><div class="card-body" data-en="Skip the commute. We come to you at a time that fits your schedule — mornings, evenings, weekends." data-fr="Pas de trajet. Nous venons à un horaire qui vous convient — matin, soir, week-end.">Skip the commute. We come to you at a time that fits your schedule — mornings, evenings, weekends.</div></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">🧑‍💻</div><div class="card-title" style="margin:0" data-en="For Busy Individuals" data-fr="Pour les Personnes Occupées">For Busy Individuals</div></div><div class="card-body" data-en="Built for working adults who struggle to find time for recovery. We make it fit your lifestyle." data-fr="Conçu pour les adultes actifs qui ont du mal à trouver du temps pour la récupération.">Built for working adults who struggle to find time for recovery. We make it fit your lifestyle.</div></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.5rem"><div style="font-size:2rem">📈</div><div class="card-title" style="margin:0" data-en="Long-term Results" data-fr="Résultats Durables">Long-term Results</div></div><div class="card-body" data-en="Sustainable improvement — better flexibility, less pain, more freedom of movement over time." data-fr="Amélioration durable — meilleure flexibilité, moins de douleur, plus de liberté de mouvement.">Sustainable improvement — better flexibility, less pain, more freedom of movement over time.</div></div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="FIT vs <span>THE REST</span>" data-fr="FIT vs <span>LES AUTRES</span>">FIT vs <span>THE REST</span></div>
+  <div style="overflow-x:auto;margin-top:1.5rem;border-radius:14px;border:1px solid var(--border)">
+    <table class="compare-table">
+      <thead><tr><th data-en="Feature" data-fr="Fonctionnalité">Feature</th><th data-en="FIT Mobile Recovery Lab" data-fr="FIT Mobile Recovery Lab">FIT Mobile Recovery Lab</th><th data-en="Gym / Clinic" data-fr="Gym / Clinique">Gym / Clinic</th><th data-en="Mobile Personal Trainer" data-fr="Coach Personnel Mobile">Mobile Personal Trainer</th></tr></thead>
+      <tbody>
+        <tr><td data-en="Comes to your home" data-fr="Vient à domicile">Comes to your home</td><td class="yes">✅ Yes</td><td class="no">❌ No</td><td class="warn">⚠️ Sometimes</td></tr>
+        <tr><td data-en="Recovery specialization" data-fr="Spécialisation récupération">Recovery specialization</td><td class="yes">✅ Yes</td><td class="warn">⚠️ Partial</td><td class="no">❌ No</td></tr>
+        <tr><td data-en="Personalized sessions" data-fr="Séances personnalisées">Personalized sessions</td><td class="yes">✅ Always</td><td class="warn">⚠️ Sometimes</td><td class="warn">⚠️ Sometimes</td></tr>
+        <tr><td data-en="Flexible scheduling" data-fr="Horaires flexibles">Flexible scheduling</td><td class="yes">✅ Yes</td><td class="no">❌ Limited</td><td class="warn">⚠️ Varies</td></tr>
+        <tr><td data-en="No membership needed" data-fr="Pas d'abonnement">No membership needed</td><td class="yes">✅ Yes</td><td class="no">❌ Required</td><td class="yes">✅ Yes</td></tr>
+        <tr><td data-en="Affordable packages" data-fr="Forfaits abordables">Affordable packages</td><td class="yes">✅ Rs 800+</td><td class="warn">⚠️ Higher</td><td class="warn">⚠️ Higher</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cta-strip">
+    <div class="cta-strip-title" data-en="Ready to Start Your Recovery Journey?" data-fr="Prêt à Commencer?">Ready to Start Your Recovery Journey?</div>
+    <p style="color:var(--muted);margin-bottom:1.2rem;font-size:0.9rem" data-en="Build long-term wellness through consistent, professional recovery sessions." data-fr="Construisez un bien-être durable grâce à des séances de récupération régulières.">Build long-term wellness through consistent, professional recovery sessions.</p>
+    <div style="color:var(--teal);font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1rem;text-transform:uppercase;letter-spacing:0.08em">📱 +230 5513 5606 &nbsp;|&nbsp; 📸 @fitmobilerecoverylab</div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: CUSTOMER CARE
+══════════════════════════════════════════ -->
+<div id="page-care" class="page">
+<div class="container">
+  <div class="section-title" data-en="CUSTOMER <span>CARE</span>" data-fr="SERVICE <span>CLIENT</span>">CUSTOMER <span>CARE</span></div>
+  <p class="section-sub" data-en="Our commitment to every single client, every single session." data-fr="Notre engagement envers chaque client, à chaque séance.">Our commitment to every single client, every single session.</p>
+  <div style="background:linear-gradient(135deg,var(--navy3),var(--navy2));border-left:4px solid var(--teal);border-radius:0 14px 14px 0;padding:2rem 2.5rem;margin-bottom:2rem">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.8rem;text-transform:uppercase;color:var(--white);margin-bottom:0.8rem" data-en="OUR COMMITMENT TO YOU" data-fr="NOTRE ENGAGEMENT ENVERS VOUS">OUR COMMITMENT TO YOU</div>
+    <p style="color:var(--muted);font-size:1rem;line-height:1.8;max-width:680px" data-en="At FIT Mobile Recovery Lab, every client deserves a premium experience. We hold ourselves to the highest standards — not just in technique, but in how we treat every person we work with." data-fr="Chez FIT Mobile Recovery Lab, chaque client mérite une expérience premium. Nous nous tenons aux normes les plus élevées.">At FIT Mobile Recovery Lab, every client deserves a premium experience. We hold ourselves to the highest standards — not just in technique, but in how we treat every person we work with.</p>
+  </div>
+  <div class="grid-2">
+    <div class="commitment-card"><div class="commitment-icon">⏰</div><div class="commitment-title" data-en="Always Punctual" data-fr="Toujours Ponctuel">Always Punctual</div><div class="commitment-desc" data-en="We respect your time completely. Our specialist arrives on time — every time. If anything changes, we notify you immediately." data-fr="Nous respectons totalement votre temps. Notre spécialiste arrive à l'heure — toujours.">We respect your time completely. Our specialist arrives on time — every time. If anything changes, we notify you immediately.</div><div class="commitment-tag" data-en="Punctuality is non-negotiable." data-fr="La ponctualité est non négociable.">Punctuality is non-negotiable.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">🧼</div><div class="commitment-title" data-en="High Hygiene Standards" data-fr="Normes d'Hygiène Élevées">High Hygiene Standards</div><div class="commitment-desc" data-en="We maintain strict hygiene protocols for all equipment and personal presentation. Your space and safety are always respected." data-fr="Nous maintenons des protocoles d'hygiène stricts pour tout l'équipement.">We maintain strict hygiene protocols for all equipment and personal presentation. Your space and safety are always respected.</div><div class="commitment-tag" data-en="Clean equipment. Professional presentation." data-fr="Équipement propre. Présentation professionnelle.">Clean equipment. Professional presentation.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">🤝</div><div class="commitment-title" data-en="Treating Clients with Respect" data-fr="Respecter les Clients">Treating Clients with Respect</div><div class="commitment-desc" data-en="Every client is treated with dignity, patience, and genuine care. We create a comfortable, judgement-free environment." data-fr="Chaque client est traité avec dignité, patience et soin sincère.">Every client is treated with dignity, patience, and genuine care. We create a comfortable, judgement-free environment.</div><div class="commitment-tag" data-en="You deserve to feel valued." data-fr="Vous méritez de vous sentir valorisé.">You deserve to feel valued.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">👂</div><div class="commitment-title" data-en="We Listen Carefully" data-fr="Nous Écoutons Attentivement">We Listen Carefully</div><div class="commitment-desc" data-en="Before each session, we take time to understand your needs, pain points, and goals. Your feedback shapes every session." data-fr="Avant chaque séance, nous prenons le temps de comprendre vos besoins et objectifs.">Before each session, we take time to understand your needs, pain points, and goals. Your feedback shapes every session.</div><div class="commitment-tag" data-en="Your voice matters." data-fr="Votre voix compte.">Your voice matters.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">🛡️</div><div class="commitment-title" data-en="Safe & Professional" data-fr="Sûr & Professionnel">Safe & Professional</div><div class="commitment-desc" data-en="All techniques are evidence-based and applied with proper training. We never push your body beyond its safe limits." data-fr="Toutes les techniques sont basées sur des preuves. Nous ne dépassons jamais vos limites sûres.">All techniques are evidence-based and applied with proper training. We never push your body beyond its safe limits.</div><div class="commitment-tag" data-en="Safety first, always." data-fr="La sécurité d'abord, toujours.">Safety first, always.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">💬</div><div class="commitment-title" data-en="Clear Communication" data-fr="Communication Claire">Clear Communication</div><div class="commitment-desc" data-en="We explain everything before and during sessions. No surprises — just professional, transparent communication." data-fr="Nous expliquons tout avant et pendant les séances. Pas de surprises.">We explain everything before and during sessions. No surprises — just professional, transparent communication.</div><div class="commitment-tag" data-en="You're always in the know." data-fr="Vous êtes toujours informé.">You're always in the know.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">⚡</div><div class="commitment-title" data-en="Quick Response" data-fr="Réponse Rapide">Quick Response</div><div class="commitment-desc" data-en="We respond to WhatsApp, Instagram, and email inquiries as fast as possible — usually within the hour during business hours." data-fr="Nous répondons aux demandes WhatsApp, Instagram et email le plus rapidement possible.">We respond to WhatsApp, Instagram, and email inquiries as fast as possible — usually within the hour during business hours.</div><div class="commitment-tag" data-en="We don't keep you waiting." data-fr="Nous ne vous faisons pas attendre.">We don't keep you waiting.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">😌</div><div class="commitment-title" data-en="Comfortable Experience" data-fr="Expérience Confortable">Comfortable Experience</div><div class="commitment-desc" data-en="From arrival to departure, we ensure the environment is calm, professional, and fully focused on your wellbeing." data-fr="De l'arrivée au départ, nous assurons un environnement calme et professionnel.">From arrival to departure, we ensure the environment is calm, professional, and fully focused on your wellbeing.</div><div class="commitment-tag" data-en="Your comfort is our priority." data-fr="Votre confort est notre priorité.">Your comfort is our priority.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">🎯</div><div class="commitment-title" data-en="Personalized Every Session" data-fr="Personnalisé à Chaque Séance">Personalized Every Session</div><div class="commitment-desc" data-en="No two sessions are the same. We adapt based on how you're feeling that day and your ongoing progress." data-fr="Pas deux séances pareilles. Nous adaptons selon votre état du jour et vos progrès.">No two sessions are the same. We adapt based on how you're feeling that day and your ongoing progress.</div><div class="commitment-tag" data-en="Tailored to you, always." data-fr="Adapté à vous, toujours.">Tailored to you, always.</div></div>
+    <div class="commitment-card"><div class="commitment-icon">📞</div><div class="commitment-title" data-en="Post-Session Follow-up" data-fr="Suivi Post-Séance">Post-Session Follow-up</div><div class="commitment-desc" data-en="We check in after sessions to see how you're feeling, track your progress, and answer any follow-up questions." data-fr="Nous vous contactons après les séances pour voir comment vous vous sentez et suivre vos progrès.">We check in after sessions to see how you're feeling, track your progress, and answer any follow-up questions.</div><div class="commitment-tag" data-en="Our care doesn't end when we leave." data-fr="Notre soin ne s'arrête pas quand nous partons.">Our care doesn't end when we leave.</div></div>
+  </div>
+  <hr class="divider">
+  <div class="section-title" data-en="OUR <span>POLICIES</span>" data-fr="NOS <span>POLITIQUES</span>">OUR <span>POLICIES</span></div>
+  <div class="grid-4" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center"><div class="card-icon">📅</div><div class="card-title" data-en="Cancellation" data-fr="Annulation">Cancellation</div><div class="card-body" data-en="Please cancel or reschedule at least 24 hours in advance." data-fr="Veuillez annuler ou reporter au moins 24 heures à l'avance.">Please cancel or reschedule at least 24 hours in advance.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">💳</div><div class="card-title" data-en="Payment" data-fr="Paiement">Payment</div><div class="card-body" data-en="Cash on arrival or bank transfer. Packages are pre-paid." data-fr="Espèces à l'arrivée ou virement bancaire. Les forfaits sont prépayés.">Cash on arrival or bank transfer. Packages are pre-paid.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">📍</div><div class="card-title" data-en="Service Area" data-fr="Zone de Service">Service Area</div><div class="card-body" data-en="Plaines Wilhems and surrounding areas. Contact us to confirm." data-fr="Plaines Wilhems et environs. Contactez-nous pour confirmer.">Plaines Wilhems and surrounding areas. Contact us to confirm.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🔒</div><div class="card-title" data-en="Privacy" data-fr="Confidentialité">Privacy</div><div class="card-body" data-en="All client information is kept strictly confidential." data-fr="Toutes les informations clients sont strictement confidentielles.">All client information is kept strictly confidential.</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: SOCIAL MEDIA
+══════════════════════════════════════════ -->
+<div id="page-social" class="page">
+<div class="container">
+  <div class="section-title" data-en="FOLLOW <span>US</span>" data-fr="SUIVEZ-<span>NOUS</span>">FOLLOW <span>US</span></div>
+  <p class="section-sub" data-en="Stay connected for recovery tips, client results, fitness advice & weekly content." data-fr="Restez connecté pour des conseils de récupération, résultats clients et contenu hebdomadaire.">Stay connected for recovery tips, client results, fitness advice & weekly content.</p>
+  <div class="grid-2" style="margin-bottom:1rem">
+    <div class="social-ig"><div style="font-size:3.5rem;margin-bottom:1rem">📸</div><div class="social-title" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">INSTAGRAM</div><div class="social-handle">@fitmobilerecoverylab</div><a href="https://www.instagram.com/fitmobilerecoverylab" target="_blank" class="social-btn btn-ig" data-en="Follow on Instagram" data-fr="Suivre sur Instagram">Follow on Instagram</a></div>
+    <div class="social-fb"><div style="font-size:3.5rem;margin-bottom:1rem">📘</div><div class="social-title" style="color:#1877f2">FACEBOOK</div><div class="social-handle">@FITMobileRecoveryLab</div><a href="https://www.facebook.com/profile.php?id=61584862082299" target="_blank" class="social-btn btn-fb" data-en="Follow on Facebook" data-fr="Suivre sur Facebook">Follow on Facebook</a></div>
+  </div>
+  <div class="social-wa" style="margin-bottom:2rem"><div style="font-size:3rem;margin-bottom:0.8rem">💬</div><div class="social-title" style="color:#25D366">WHATSAPP</div><div class="social-handle">+230 5513 5606</div><a href="https://wa.me/23055135606" target="_blank" class="social-btn btn-wa" data-en="Message on WhatsApp" data-fr="Message sur WhatsApp">Message on WhatsApp</a></div>
+  <hr class="divider">
+  <div class="section-title" data-en="WHAT WE <span>POST</span>" data-fr="CE QUE NOUS <span>PUBLIONS</span>">WHAT WE <span>POST</span></div>
+  <div class="grid-3" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center"><div class="card-icon">🎥</div><div class="card-title" data-en="Real Session Videos" data-fr="Vidéos de Séances Réelles">Real Session Videos</div><div class="card-body" data-en="Watch actual recovery sessions so you know exactly what to expect." data-fr="Regardez de vraies séances de récupération.">Watch actual recovery sessions so you know exactly what to expect.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">📊</div><div class="card-title" data-en="Before & After Results" data-fr="Avant & Après">Before & After Results</div><div class="card-body" data-en="Real client mobility transformations — see the difference." data-fr="Vraies transformations de mobilité client.">Real client mobility transformations — see the difference.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">💡</div><div class="card-title" data-en="Recovery Tips" data-fr="Conseils de Récupération">Recovery Tips</div><div class="card-body" data-en="Expert tips on stretching, mobility & pain relief you can apply daily." data-fr="Conseils d'experts sur les étirements et la mobilité.">Expert tips on stretching, mobility & pain relief you can apply daily.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🏅</div><div class="card-title" data-en="Client Testimonials" data-fr="Témoignages Clients">Client Testimonials</div><div class="card-body" data-en="Hear from real clients about how FIT changed their recovery." data-fr="Entendez de vrais clients parler de leur expérience avec FIT.">Hear from real clients about how FIT changed their recovery.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">📅</div><div class="card-title" data-en="Weekly Content" data-fr="Contenu Hebdomadaire">Weekly Content</div><div class="card-body" data-en="Consistent, high-quality posts every week." data-fr="Publications régulières et de haute qualité chaque semaine.">Consistent, high-quality posts every week.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🎯</div><div class="card-title" data-en="Fitness Advice" data-fr="Conseils Fitness">Fitness Advice</div><div class="card-body" data-en="Broader fitness insights to help you perform and recover better." data-fr="Conseils fitness plus larges pour mieux performer et récupérer.">Broader fitness insights to help you perform and recover better.</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: BOOKING
+══════════════════════════════════════════ -->
+<div id="page-booking" class="page">
+<div class="container">
+  <div class="section-title" data-en="BOOK YOUR <span>SESSION</span>" data-fr="RÉSERVEZ VOTRE <span>SÉANCE</span>">BOOK YOUR <span>SESSION</span></div>
+  <p class="section-sub" data-en="Fill in the form and we'll confirm via WhatsApp." data-fr="Remplissez le formulaire et nous confirmerons via WhatsApp.">Fill in the form and we'll confirm via WhatsApp.</p>
+  <div class="two-col">
+    <div>
+      <div class="form-group"><label class="form-label" data-en="Full Name *" data-fr="Nom Complet *">Full Name *</label><input class="form-input" id="b-name" type="text" placeholder="e.g. Jean Dupont"></div>
+      <div class="form-group"><label class="form-label" data-en="Phone / WhatsApp *" data-fr="Téléphone / WhatsApp *">Phone / WhatsApp *</label><input class="form-input" id="b-phone" type="tel" placeholder="+230 XXXX XXXX"></div>
+      <div class="form-group"><label class="form-label" data-en="Service Type *" data-fr="Type de Service *">Service Type *</label>
+        <select class="form-select" id="b-service">
+          <option data-en="Assisted Stretching" data-fr="Étirements Assistés">Assisted Stretching</option>
+          <option data-en="Recovery Session" data-fr="Séance de Récupération">Recovery Session</option>
+          <option data-en="Mobility Training" data-fr="Entraînement en Mobilité">Mobility Training</option>
+          <option data-en="Mobile Home Service" data-fr="Service à Domicile">Mobile Home Service</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label" data-en="Preferred Date *" data-fr="Date Préférée *">Preferred Date *</label><input class="form-input" id="b-date" type="date"></div>
+        <div class="form-group"><label class="form-label" data-en="Preferred Time *" data-fr="Heure Préférée *">Preferred Time *</label>
+          <select class="form-select" id="b-time">
+            <option>07:00</option><option>08:00</option><option>09:00</option><option>10:00</option>
+            <option>11:00</option><option>12:00</option><option>13:00</option><option>14:00</option>
+            <option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label" data-en="Your Address *" data-fr="Votre Adresse *">Your Address *</label><textarea class="form-textarea" id="b-address" placeholder="Street, area, city..."></textarea></div>
+      <div class="form-group"><label class="form-label" data-en="Notes (optional)" data-fr="Notes (facultatif)">Notes (optional)</label><textarea class="form-textarea" id="b-notes" style="min-height:70px" placeholder="Any special requests or health notes..."></textarea></div>
+      <button class="submit-btn" onclick="submitBooking()" data-en="Request Appointment" data-fr="Demander un Rendez-vous">Request Appointment</button>
+      <div class="alert alert-success" id="b-success">✅ Booking submitted! We'll contact you on WhatsApp to confirm.</div>
+      <div class="alert alert-error"   id="b-error">❌ Please fill in all required fields.</div>
+      <div class="alert alert-error"   id="b-dberror"></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.2rem;text-transform:uppercase;color:var(--white);margin-bottom:1rem">📋 Booking Info</div>
+        <div style="color:var(--muted);font-size:0.88rem;line-height:1.8">
+          <div style="padding:0.6rem 0;border-bottom:1px solid var(--border)">⏱ <strong style="color:var(--text)" data-en="Duration:" data-fr="Durée:">Duration:</strong> <span data-en="60 minutes" data-fr="60 minutes">60 minutes</span></div>
+          <div style="padding:0.6rem 0;border-bottom:1px solid var(--border)">📍 <strong style="color:var(--text)" data-en="Area:" data-fr="Zone:">Area:</strong> <span data-en="Plaines Wilhems & surroundings" data-fr="Plaines Wilhems & environs">Plaines Wilhems & surroundings</span></div>
+          <div style="padding:0.6rem 0;border-bottom:1px solid var(--border)">📅 <strong style="color:var(--text)" data-en="Hours:" data-fr="Heures:">Hours:</strong> <span data-en="Mon–Sat, 7AM – 7PM" data-fr="Lun–Sam, 7h – 19h">Mon–Sat, 7AM – 7PM</span></div>
+          <div style="padding:0.6rem 0;border-bottom:1px solid var(--border)">✅ <strong style="color:var(--text)" data-en="Confirmation:" data-fr="Confirmation:">Confirmation:</strong> <span data-en="Via WhatsApp within 2 hours" data-fr="Via WhatsApp dans les 2 heures">Via WhatsApp within 2 hours</span></div>
+          <div style="padding:0.6rem 0">💳 <strong style="color:var(--text)" data-en="Payment:" data-fr="Paiement:">Payment:</strong> <span data-en="Cash or bank transfer" data-fr="Espèces ou virement">Cash or bank transfer</span></div>
+        </div>
+      </div>
+      <div class="social-wa" style="text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;color:#25D366;margin-bottom:0.4rem" data-en="💬 Quick Booking" data-fr="💬 Réservation Rapide">💬 Quick Booking</div>
+        <p style="color:var(--muted);font-size:0.82rem;margin-bottom:1rem" data-en="Prefer WhatsApp? Message us!" data-fr="Préférez WhatsApp? Écrivez-nous!">Prefer WhatsApp? Message us!</p>
+        <a href="https://wa.me/23055135606" target="_blank" class="social-btn btn-wa">+230 5513 5606</a>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: CONTACT
+══════════════════════════════════════════ -->
+<div id="page-contact" class="page">
+<div class="container">
+  <div class="section-title" data-en="CONTACT <span>US</span>" data-fr="CONTACTEZ-<span>NOUS</span>">CONTACT <span>US</span></div>
+  <p class="section-sub" data-en="We're here to answer your questions and book your first session." data-fr="Nous sommes là pour répondre à vos questions et réserver votre première séance.">We're here to answer your questions and book your first session.</p>
+  <div class="two-col-eq">
+    <div>
+      <div class="contact-item"><div class="contact-icon">📞</div><div><div class="contact-label" data-en="Phone / WhatsApp" data-fr="Téléphone / WhatsApp">Phone / WhatsApp</div><div class="contact-value">+230 5513 5606</div></div></div>
+      <div class="contact-item"><div class="contact-icon">📧</div><div><div class="contact-label">Email</div><div class="contact-value">fitmobrecoverylab.777@gmail.com</div></div></div>
+      <div class="contact-item"><div class="contact-icon">📘</div><div><div class="contact-label">Facebook</div><div class="contact-value">@FITMobileRecoveryLab</div></div></div>
+      <div class="contact-item"><div class="contact-icon">📸</div><div><div class="contact-label">Instagram</div><div class="contact-value">@fitmobilerecoverylab</div></div></div>
+      <div class="contact-item"><div class="contact-icon">📍</div><div><div class="contact-label" data-en="Service Area" data-fr="Zone de Service">Service Area</div><div class="contact-value" data-en="Plaines Wilhems & surroundings" data-fr="Plaines Wilhems & environs">Plaines Wilhems & surroundings</div></div></div>
+      <div class="hours-box">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;text-transform:uppercase;color:var(--white);margin-bottom:0.5rem">🕐 <span data-en="Business Hours" data-fr="Heures d'Ouverture">Business Hours</span></div>
+        <div style="color:var(--muted);font-size:0.88rem;line-height:2">
+          <span data-en="Monday – Saturday" data-fr="Lundi – Samedi">Monday – Saturday</span><br>
+          <strong style="color:var(--teal)">7:00 AM – 7:00 PM</strong><br>
+          <span data-en="Sunday:" data-fr="Dimanche:">Sunday:</span> <span style="color:var(--red)" data-en="Closed" data-fr="Fermé">Closed</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.3rem;text-transform:uppercase;color:var(--white);margin-bottom:1.2rem">✉️ <span data-en="Send a Message" data-fr="Envoyer un Message">Send a Message</span></div>
+      <div class="form-group"><label class="form-label" data-en="Your Name" data-fr="Votre Nom">Your Name</label><input class="form-input" id="c-name" type="text"></div>
+      <div class="form-group"><label class="form-label" data-en="Your Email" data-fr="Votre Email">Your Email</label><input class="form-input" id="c-email" type="email"></div>
+      <div class="form-group"><label class="form-label" data-en="Message" data-fr="Message">Message</label><textarea class="form-textarea" id="c-message" style="min-height:140px"></textarea></div>
+      <button class="submit-btn" onclick="submitContact()" data-en="Send Message" data-fr="Envoyer">Send Message</button>
+      <div class="alert alert-success" id="c-success" data-en="✅ Message sent! We'll be in touch soon." data-fr="✅ Message envoyé ! Nous vous répondrons bientôt.">✅ Message sent! We'll be in touch soon.</div>
+      <div class="alert alert-error"   id="c-error"  data-en="❌ Please fill in all fields." data-fr="❌ Veuillez remplir tous les champs.">❌ Please fill in all fields.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title" data-en="OUR <span>COMMITMENT</span>" data-fr="NOTRE <span>ENGAGEMENT</span>">OUR <span>COMMITMENT</span></div>
+  <div class="grid-3" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center"><div class="card-icon">⏰</div><div class="card-title" data-en="Always Punctual" data-fr="Toujours Ponctuel">Always Punctual</div><div class="card-body" data-en="We respect your time and arrive on schedule." data-fr="Nous respectons votre temps et arrivons à l'heure.">We respect your time and arrive on schedule.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🧼</div><div class="card-title" data-en="High Hygiene" data-fr="Hygiène Élevée">High Hygiene</div><div class="card-body" data-en="Clean equipment and professional presentation." data-fr="Équipement propre et présentation professionnelle.">Clean equipment and professional presentation.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🤝</div><div class="card-title" data-en="Respectful Service" data-fr="Service Respectueux">Respectful Service</div><div class="card-body" data-en="We treat every client with care and respect." data-fr="Nous traitons chaque client avec soin et respect.">We treat every client with care and respect.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">💬</div><div class="card-title" data-en="Quick Response" data-fr="Réponse Rapide">Quick Response</div><div class="card-body" data-en="We respond to all inquiries as fast as possible." data-fr="Nous répondons à toutes les demandes le plus rapidement possible.">We respond to all inquiries as fast as possible.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">🎯</div><div class="card-title" data-en="Personalized" data-fr="Personnalisé">Personalized</div><div class="card-body" data-en="Every session adapted to your specific needs." data-fr="Chaque séance adaptée à vos besoins spécifiques.">Every session adapted to your specific needs.</div></div>
+    <div class="card" style="text-align:center"><div class="card-icon">📞</div><div class="card-title" data-en="Follow-up" data-fr="Suivi">Follow-up</div><div class="card-body" data-en="We check in after sessions to ensure your progress." data-fr="Nous vous contactons après les séances pour suivre vos progrès.">We check in after sessions to ensure your progress.</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE: ADMIN
+══════════════════════════════════════════ -->
+<div id="page-admin" class="page">
+<div class="container">
+  <div class="section-title">ADMIN <span>DASHBOARD</span></div>
+  <div id="admin-login-section">
+    <div class="admin-login-wrap">
+      <div style="font-size:3rem;margin-bottom:1rem">🔐</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.4rem;text-transform:uppercase;color:var(--white);margin-bottom:1.5rem">Admin Access Only</div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="admin-pwd" type="password" onkeydown="if(event.key==='Enter')adminLogin()"></div>
+      <button class="submit-btn" onclick="adminLogin()">Login</button>
+      <div class="alert alert-error" id="admin-error">❌ Incorrect password.</div>
+    </div>
+  </div>
+  <div id="admin-dashboard-section" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+      <button class="btn-outline" onclick="adminLogout()">🚪 Logout</button>
+    </div>
+    <div class="metrics-grid" id="admin-metrics"></div>
+    <div class="filter-row" id="admin-filters">
+      <button class="filter-btn active" onclick="filterBookings('All',this)">All</button>
+      <button class="filter-btn" onclick="filterBookings('Pending',this)">⏳ Pending</button>
+      <button class="filter-btn" onclick="filterBookings('Confirmed',this)">✅ Confirmed</button>
+      <button class="filter-btn" onclick="filterBookings('Done',this)">🏁 Done</button>
+    </div>
+    <div id="admin-bookings"></div>
+  </div>
+</div>
+</div>
+
+<!-- WhatsApp Float -->
+<a class="wa-float" href="https://wa.me/23055135606" target="_blank" title="WhatsApp">💬</a>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIGURATION — replace with your values
+// ══════════════════════════════════════════
+const SUPABASE_URL  = "https://ougninncyfdcfikfscxh.supabase.co";
+const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91Z25pbm5jeWZkY2Zpa2ZzY3hoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MDY1NTYsImV4cCI6MjA5MTM4MjU1Nn0.N1z00UIfnSye_ZdOZTyVLrfMMpDfcZd1pKZAYGSFeeo";
+const ADMIN_PASS    = "FitMobile@2026"; // change this
+
+// ── Init Supabase ──
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showPage(id, linkEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(a => a.classList.remove('active'));
+  if (linkEl) linkEl.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function toggleMenu() {
+  const m = document.getElementById('mobileMenu');
+  const h = document.getElementById('hamburger');
+  m.classList.toggle('open');
+  h.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+// LANGUAGE
+// ══════════════════════════════════════════
+let lang = 'en';
+function toggleLang() {
+  lang = lang === 'en' ? 'fr' : 'en';
+  document.getElementById('langBtn').textContent = lang === 'en' ? '🇫🇷 FR' : '🇬🇧 EN';
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if (val) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = val;
+      else el.innerHTML = val;
+    }
+  });
+  // Update select options
+  document.querySelectorAll('select option[data-en]').forEach(opt => {
+    const val = opt.getAttribute('data-' + lang);
+    if (val) opt.textContent = val;
+  });
+}
+
+// ══════════════════════════════════════════
+// BOOKING FORM
+// ══════════════════════════════════════════
+async function submitBooking() {
+  const name    = document.getElementById('b-name').value.trim();
+  const phone   = document.getElementById('b-phone').value.trim();
+  const service = document.getElementById('b-service').value;
+  const date    = document.getElementById('b-date').value;
+  const time    = document.getElementById('b-time').value;
+  const address = document.getElementById('b-address').value.trim();
+  const notes   = document.getElementById('b-notes').value.trim();
+
+  hideAlerts(['b-success','b-error','b-dberror']);
+  if (!name || !phone || !date || !address) {
+    showAlert('b-error'); return;
+  }
+  try {
+    const { error } = await sb.from('bookings').insert([
+      { name, phone, service, date, time, address, notes, status: 'Pending' }
+    ]);
+    if (error) throw error;
+    showAlert('b-success');
+    ['b-name','b-phone','b-address','b-notes'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    const el = document.getElementById('b-dberror');
+    el.textContent = '❌ Error: ' + (e.message || 'Could not save booking. Check Supabase config.');
+    showAlert('b-dberror');
+  }
+}
+
+// ══════════════════════════════════════════
+// CONTACT FORM
+// ══════════════════════════════════════════
+async function submitContact() {
+  const name    = document.getElementById('c-name').value.trim();
+  const email   = document.getElementById('c-email').value.trim();
+  const message = document.getElementById('c-message').value.trim();
+  hideAlerts(['c-success','c-error']);
+  if (!name || !email || !message) { showAlert('c-error'); return; }
+  try {
+    const { error } = await sb.from('contact_messages').insert([{ name, email, message }]);
+    if (error) throw error;
+    showAlert('c-success');
+    ['c-name','c-email','c-message'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    showAlert('c-error');
+  }
+}
+
+// ══════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════
+let allBookings = [];
+let currentFilter = 'All';
+
+function adminLogin() {
+  const pwd = document.getElementById('admin-pwd').value;
+  document.getElementById('admin-error').classList.remove('show');
+  if (pwd === ADMIN_PASS) {
+    document.getElementById('admin-login-section').style.display = 'none';
+    document.getElementById('admin-dashboard-section').style.display = 'block';
+    loadBookings();
+  } else {
+    document.getElementById('admin-error').classList.add('show');
+  }
+}
+
+function adminLogout() {
+  document.getElementById('admin-login-section').style.display = 'block';
+  document.getElementById('admin-dashboard-section').style.display = 'none';
+  document.getElementById('admin-pwd').value = '';
+}
+
+async function loadBookings() {
+  const { data, error } = await sb.from('bookings').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  allBookings = data || [];
+  renderMetrics();
+  renderBookings();
+}
+
+function renderMetrics() {
+  const total     = allBookings.length;
+  const pending   = allBookings.filter(b => b.status === 'Pending').length;
+  const confirmed = allBookings.filter(b => b.status === 'Confirmed').length;
+  const done      = allBookings.filter(b => b.status === 'Done').length;
+  document.getElementById('admin-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-num" style="color:var(--teal)">${total}</div><div class="metric-label">Total</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--yellow)">${pending}</div><div class="metric-label">Pending</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--blue)">${confirmed}</div><div class="metric-label">Confirmed</div></div>
+    <div class="metric-card"><div class="metric-num" style="color:var(--green)">${done}</div><div class="metric-label">Done</div></div>
+  `;
+}
+
+function filterBookings(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBookings();
+}
+
+function renderBookings() {
+  const list = currentFilter === 'All' ? allBookings : allBookings.filter(b => b.status === currentFilter);
+  const container = document.getElementById('admin-bookings');
+  if (!list.length) { container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">No bookings found.</p>'; return; }
+  container.innerHTML = list.map(b => `
+    <div class="booking-card" id="bc-${b.id}">
+      <div class="booking-header">
+        <div class="booking-name">${b.name}</div>
+        <div class="status-pill status-${b.status}">${b.status}</div>
+        <div class="booking-id">#${b.id} · ${(b.created_at||'').slice(0,10)}</div>
+      </div>
+      <div class="booking-details">
+        <div><span style="color:var(--dim)">📱 </span>${b.phone}</div>
+        <div><span style="color:var(--dim)">🏷 </span>${b.service}</div>
+        <div><span style="color:var(--dim)">📅 </span>${b.date} at ${b.time}</div>
+        <div><span style="color:var(--dim)">📍 </span>${b.address}</div>
+        ${b.notes ? `<div><span style="color:var(--dim)">📝 </span><em style="color:var(--muted)">${b.notes}</em></div>` : ''}
+      </div>
+      <div class="booking-actions">
+        ${b.status !== 'Confirmed' && b.status !== 'Done' ? `<button class="action-btn btn-confirm" onclick="updateStatus(${b.id},'Confirmed')">✅ Confirm</button>` : ''}
+        ${b.status !== 'Done' ? `<button class="action-btn btn-done" onclick="updateStatus(${b.id},'Done')">🏁 Mark Done</button>` : ''}
+        <button class="action-btn btn-delete" onclick="deleteBooking(${b.id})">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateStatus(id, status) {
+  const { error } = await sb.from('bookings').update({ status }).eq('id', id);
+  if (!error) { allBookings = allBookings.map(b => b.id === id ? {...b, status} : b); renderMetrics(); renderBookings(); }
+}
+
+async function deleteBooking(id) {
+  if (!confirm('Delete this booking?')) return;
+  const { error } = await sb.from('bookings').delete().eq('id', id);
+  if (!error) { allBookings = allBookings.filter(b => b.id !== id); renderMetrics(); renderBookings(); }
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function showAlert(id)  { document.getElementById(id).classList.add('show'); }
+function hideAlerts(ids){ ids.forEach(id => document.getElementById(id).classList.remove('show')); }
+
+// Set min date for booking
+document.getElementById('b-date').min = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
